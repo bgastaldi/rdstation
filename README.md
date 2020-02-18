@@ -2,6 +2,12 @@
 
 Single class to allow RDStation integration on PHP projects.
 
+## Installation
+
+```
+composer require glauberportella/rdstation
+```
+
 ## TODO
 
 - No test was done
