@@ -2,12 +2,14 @@
 
 namespace RDStation;
 
+use RDStation\Exception\UnauthorizedRequest;
+
 /**
  * RD Station API integration for new API version
  *
  * @author Glauber Portella <glauberportella@gmail.com>
  */
-class RDStation
+class Event
 {
     const EVENT_CONVERSION = 'CONVERSION';
     const EVENT_OPPORTUNITY = 'OPPORTUNITY';
@@ -36,64 +38,24 @@ class RDStation
     /**
      * Get or refresh an Access token
      *
-     * @param string $code
-     * @param boolean $refresh
-     * @return array JSON access token response as array
+     * @param string $code Authorization code to get access token
+     * @return AccessToken
      */
-    public function getAccessToken($code, $refresh = false)
+    public function getAccessToken($code)
     {
-        $fields = array(
+        $response = null;
+
+        $response = Request::send('POST', self::API_ENDPOINT . '/auth/token', [
             'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret
-        );
+            'client_secret' => $this->clientSecret,
+            'code' => $code
+        ]);
 
-        if ($refresh) {
-            $fields['refresh_token'] = $code;
-        } else {
-            $fields['code'] = $code;
-        }
-
-        $ch = curl_init(sprintf('%s/auth/token', self::API_ENDPOINT));
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json'
-        ));
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $response = curl_exec($ch);
         if (!$response) {
-            curl_close($ch);
-            throw new \Exception('RDStation::sendEvent(): Request failed on response.');
+            throw new \Exception('RDStation::getAccessToken(): Request failed on response.');
         }
 
-        $response = json_decode($response, true);
-        $err = curl_errno($ch);
-        $httpCode = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
-
-        curl_close($ch);
-
-        if (0 !== $err) {
-            throw new \Exception(curl_error($ch));
-        }
-
-        if ($httpCode >= 400) {
-            $message = array();
-            foreach ($response['errors'] as $field => $error) {
-                if (!is_array($error)) {
-                    $message[] = $response['errors']['error_type'] . ': ' . $response['errors']['error_message'];
-                } else {
-                    $msg = '';
-                    foreach ($error as $errorFields) {
-                        $msg .= $errorFields['error_type'] . ' - ' . $errorFields['error_message'] . "\n";
-                    }
-                    $message[] = $field . ': ' . $msg;
-                }
-            }
-            throw new \Exception(implode("\n", $message), $httpCode);
-        }
-
-        return $response;
+        return new AccessToken($response['access_token'], $response['expires_in'], $response['refresh_token']);
     }
 
     /**
@@ -122,11 +84,11 @@ class RDStation
      * company_address                  String  false   Company address of the contact.
      * client_tracking_id               String  false   LeadTracking client_id
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function conversion($accessToken, array $payload)
+    public function conversion(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_CONVERSION, self::CDP_FAMILY, $payload);
     }
@@ -139,11 +101,11 @@ class RDStation
      * funnel_name                     String  true     Name of the funnel to which the Contact should be marked as opportunity.
      * email	                       String  true     Email of the contact.
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function opportunity($accessToken, array $payload)
+    public function opportunity(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_OPPORTUNITY, self::CDP_FAMILY, $payload);
     }
@@ -157,11 +119,11 @@ class RDStation
      * email	                       String  true     Email of the contact.
      * value                           String  false    Value of the won opportunity.
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function opportunityWon($accessToken, array $payload)
+    public function opportunityWon(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_OPPORTUNITY_WON, self::CDP_FAMILY, $payload);
     }
@@ -174,11 +136,11 @@ class RDStation
      * funnel_name                     String  true     Name of the funnel to which the Contact should be marked as lost.
      * reason                          String  false    Reason for why the Contact was marked as lost.
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function opportunityLost($accessToken, array $payload)
+    public function opportunityLost(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_OPPORTUNITY_LOST, self::CDP_FAMILY, $payload);
     }
@@ -196,11 +158,11 @@ class RDStation
      * cf_order_payment_method          String  false   Method of payment. Available options: "Credit Card", "Debit Card", "Invoice", "Others"
      * cf_order_payment_amount          String  false   Total value of the order
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function orderPlaced($accessToken, array $payload)
+    public function orderPlaced(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_ORDER_PLACED, self::CDP_FAMILY, $payload);
     }
@@ -216,11 +178,11 @@ class RDStation
      * cf_order_product_id              String  true    Product Identifier
      * cf_order_product_sku             String  false   Product SKU
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function orderPlacedItem($accessToken, array $payload)
+    public function orderPlacedItem(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_ORDER_PLACED_ITEM, self::CDP_FAMILY, $payload);
     }
@@ -236,11 +198,11 @@ class RDStation
      * cf_cart_total_items              Integer false   Total number of itens from the cart.
      * cf_cart_status                   String  false   Status of the cart to when the event was triggered
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function cartAbandoned($accessToken, array $payload)
+    public function cartAbandoned(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_CART_ABANDONED, self::CDP_FAMILY, $payload);
     }
@@ -256,11 +218,11 @@ class RDStation
      * cf_cart_product_id               String	true	Identifier of the product that was left on the cart.
      * cf_cart_product_sku              String	false	SKU of the product that was left on the cart
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function cartAbandonedItem($accessToken, array $payload)
+    public function cartAbandonedItem(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_CART_ABANDONED_ITEM, self::CDP_FAMILY, $payload);
     }
@@ -286,11 +248,11 @@ class RDStation
      * chat_type                        String  false   Type of the chat.
      * company_site                     String  false   Company website of the contact.
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function chatStarted($accessToken, array $payload)
+    public function chatStarted(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_CHAT_STARTED, self::CDP_FAMILY, $payload);
     }
@@ -316,11 +278,11 @@ class RDStation
      * chat_type                        String  false   Type of the chat.
      * company_site                     String  false   Company website of the contact.
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function chatFinished($accessToken, array $payload)
+    public function chatFinished(AccessToken $accessToken, array $payload)
     {
         return $this->sendEvent($accessToken, self::EVENT_CHAT_FINISHED, self::CDP_FAMILY, $payload);
     }
@@ -328,43 +290,35 @@ class RDStation
     /**
      * Send a general RD Station event
      *
-     * @param string $accessToken
+     * @param AccessToken $accessToken
      * @param string $eventType
      * @param string $eventFamily
      * @param array $payload
      * @return array JSON response as array
      */
-    public function sendEvent($accessToken, $eventType, $eventFamily, array $payload)
+    public function sendEvent(AccessToken $accessToken, $eventType, $eventFamily, array $payload)
     {
-        $fields = array(
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret
-        );
+        $fields = [
+            'event_type' => $eventType,
+            'event_family' => $eventFamily,
+            'payload' => $payload
+        ];
 
-        if ($refresh) {
-            $fields['refresh_token'] = $code;
-        } else {
-            $fields['code'] = $code;
+        try {
+            $response = Request::send('POST', self::API_ENDPOINT . '/platform/events', $fields, [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $accessToken->getToken()
+            ]);
+        } catch (UnauthorizedRequest $e) {
+            // invalid access token? refresh and try again
+            if ($e->hasErrorType('UNAUTHORIZED')) {
+                $accessToken->refresh($this->clientId, $this->clientSecret);
+                $response = Request::send('POST', self::API_ENDPOINT . '/platform/events', $fields, [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $accessToken->getToken()
+                ]);
+            }
         }
-
-        $ch = curl_init(sprintf('%s/platform/events', self::API_ENDPOINT));
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $accessToken
-        ));
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $response = curl_exec($ch);
-
-        $err = curl_errno($ch);
-        if (0 !== $err) {
-            curl_close($ch);
-            throw new \Exception(curl_error($ch));
-        }
-
-        curl_close($ch);
 
         return json_decode($response, true);
     }
