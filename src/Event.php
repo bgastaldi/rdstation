@@ -25,38 +25,16 @@ class Event
 
     const CDP_FAMILY = 'CDP';
 
-    const API_ENDPOINT = 'https://api.rd.services';
-
-    private $clientId;
-    private $clientSecret;
-
-    public function __construct($clientId, $clientSecret)
-    {
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
-    }
-
     /**
-     * Get or refresh an Access token
+     * Access token
      *
-     * @param string $code Authorization code to get access token
-     * @return AccessToken
+     * @var AccessToken
      */
-    public function getAccessToken($code)
+    private $accessToken;
+
+    public function __construct(AccessToken $accessToken)
     {
-        $response = null;
-
-        $response = Request::send('POST', self::API_ENDPOINT . '/auth/token', [
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'code' => $code
-        ]);
-
-        if (!$response) {
-            throw new \Exception('RDStation::getAccessToken(): Request failed on response.');
-        }
-
-        return new AccessToken($response['access_token'], $response['expires_in'], $response['refresh_token']);
+        $this->accessToken = $accessToken;
     }
 
     /**
@@ -85,13 +63,12 @@ class Event
      * company_address                  String  false   Company address of the contact.
      * client_tracking_id               String  false   LeadTracking client_id
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function conversion(AccessToken $accessToken, array $payload)
+    public function conversion(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_CONVERSION, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_CONVERSION, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -102,13 +79,12 @@ class Event
      * funnel_name                     String  true     Name of the funnel to which the Contact should be marked as opportunity.
      * email	                       String  true     Email of the contact.
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function opportunity(AccessToken $accessToken, array $payload)
+    public function opportunity(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_OPPORTUNITY, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_OPPORTUNITY, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -120,13 +96,12 @@ class Event
      * email	                       String  true     Email of the contact.
      * value                           String  false    Value of the won opportunity.
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function opportunityWon(AccessToken $accessToken, array $payload)
+    public function opportunityWon(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_OPPORTUNITY_WON, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_OPPORTUNITY_WON, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -137,13 +112,12 @@ class Event
      * funnel_name                     String  true     Name of the funnel to which the Contact should be marked as lost.
      * reason                          String  false    Reason for why the Contact was marked as lost.
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function opportunityLost(AccessToken $accessToken, array $payload)
+    public function opportunityLost(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_OPPORTUNITY_LOST, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_OPPORTUNITY_LOST, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -159,13 +133,12 @@ class Event
      * cf_order_payment_method          String  false   Method of payment. Available options: "Credit Card", "Debit Card", "Invoice", "Others"
      * cf_order_payment_amount          String  false   Total value of the order
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function orderPlaced(AccessToken $accessToken, array $payload)
+    public function orderPlaced(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_ORDER_PLACED, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_ORDER_PLACED, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -179,13 +152,12 @@ class Event
      * cf_order_product_id              String  true    Product Identifier
      * cf_order_product_sku             String  false   Product SKU
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function orderPlacedItem(AccessToken $accessToken, array $payload)
+    public function orderPlacedItem(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_ORDER_PLACED_ITEM, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_ORDER_PLACED_ITEM, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -199,13 +171,12 @@ class Event
      * cf_cart_total_items              Integer false   Total number of itens from the cart.
      * cf_cart_status                   String  false   Status of the cart to when the event was triggered
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function cartAbandoned(AccessToken $accessToken, array $payload)
+    public function cartAbandoned(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_CART_ABANDONED, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_CART_ABANDONED, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -219,13 +190,12 @@ class Event
      * cf_cart_product_id               String	true	Identifier of the product that was left on the cart.
      * cf_cart_product_sku              String	false	SKU of the product that was left on the cart
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function cartAbandonedItem(AccessToken $accessToken, array $payload)
+    public function cartAbandonedItem(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_CART_ABANDONED_ITEM, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_CART_ABANDONED_ITEM, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -249,13 +219,12 @@ class Event
      * chat_type                        String  false   Type of the chat.
      * company_site                     String  false   Company website of the contact.
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function chatStarted(AccessToken $accessToken, array $payload)
+    public function chatStarted(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_CHAT_STARTED, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_CHAT_STARTED, self::CDP_FAMILY, $payload);
     }
 
     /**
@@ -279,25 +248,23 @@ class Event
      * chat_type                        String  false   Type of the chat.
      * company_site                     String  false   Company website of the contact.
      *
-     * @param AccessToken $accessToken
      * @param array $payload
      * @return array JSON respone as array
      */
-    public function chatFinished(AccessToken $accessToken, array $payload)
+    public function chatFinished(array $payload)
     {
-        return $this->sendEvent($accessToken, self::EVENT_CHAT_FINISHED, self::CDP_FAMILY, $payload);
+        return $this->sendEvent(self::EVENT_CHAT_FINISHED, self::CDP_FAMILY, $payload);
     }
 
     /**
      * Send a general RD Station event
      *
-     * @param AccessToken $accessToken
      * @param string $eventType
      * @param string $eventFamily
      * @param array $payload
      * @return array JSON response as array
      */
-    public function sendEvent(AccessToken $accessToken, $eventType, $eventFamily, array $payload)
+    public function sendEvent($eventType, $eventFamily, array $payload)
     {
         $fields = [
             'event_type' => $eventType,
@@ -306,17 +273,17 @@ class Event
         ];
 
         try {
-            $response = Request::send('POST', self::API_ENDPOINT . '/platform/events', $fields, [
+            $response = Request::send('POST', '/platform/events', $fields, [
                 'Content-Type: application/json',
-                'Authorization: Bearer ' . $accessToken->getToken()
+                'Authorization: Bearer ' . $this->accessToken->getToken()
             ]);
         } catch (UnauthorizedRequest $e) {
             // invalid access token? refresh and try again
             if ($e->hasErrorType(Exception::TYPE_UNAUTHORIZED)) {
-                $accessToken->refresh($this->clientId, $this->clientSecret);
-                $response = Request::send('POST', self::API_ENDPOINT . '/platform/events', $fields, [
+                $this->accessToken->refresh();
+                $response = Request::send('POST', '/platform/events', $fields, [
                     'Content-Type: application/json',
-                    'Authorization: Bearer ' . $accessToken->getToken()
+                    'Authorization: Bearer ' . $this->accessToken->getToken()
                 ]);
             } else {
                 throw $e;

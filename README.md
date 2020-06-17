@@ -8,6 +8,30 @@ Single class to allow RDStation integration on PHP projects.
 composer require glauberportella/rdstation
 ```
 
+## Use
+
+```php
+<?php
+
+use RDStation\AccessToken;
+use RDStation\Event;
+
+$clientId = 'Your RDStation app client id';
+$clientSecret = 'Your RDStation app client secret';
+$authCode = 'Code returned on callback'
+
+$auth = new Authentication($clientId, $clientSecret);
+$accessToken = $auth->getAccessToken($authCode);
+
+$event = new Event($accessToken);
+$event->conversion([
+    'email' => 'leademail@email.com.br',
+    'name' => 'Lead Name',
+    'tags' => ['lead', 'tags']
+]);
+
+```
+
 ## TODO
 
 - No test was done

@@ -4,7 +4,12 @@ namespace RDStation;
 
 class AccessToken
 {
-    const API_ENDPOINT = 'https://api.rd.services';
+    /**
+     * Authentication
+     *
+     * @var Authentication
+     */
+    private $auth;    
 
     /**
      * Access token
@@ -27,32 +32,21 @@ class AccessToken
      */
     private $refreshToken;
 
-    public function __construct($token = null, $expiresIn = null, $refreshToken = null)
+    public function __construct(Authentication $auth = null, string $token = null, int $expiresIn = null, string $refreshToken = null)
     {
+        $this->auth = $auth;
         $this->token = $token;
         $this->expiresIn = $expiresIn;
         $this->refreshToken = $refreshToken;
     }
 
-    public function refresh(string $clientId, string $clientSecret)
+    public function refresh()
     {
-        $fields = [
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
-            'refresh_token' => $this->refreshToken
-        ];
-
-        $response = Request::send('POST', self::API_ENDPOINT . '/auth/token', $fields, [
-            'Content-Type: application/json'
-        ]);
-
-        if (!$response) {
-            throw new \Exception('Could not refresh access token.');
+        if (!$this->auth) {
+            throw new \Exception('No authentication exists on AccessToken. Try setting it calling the method AccessToken::setAuth(Authentication $auth).');
         }
 
-        $this->token = $response['access_token'] ?? null;
-        $this->expiresIn = $response['expires_in'] ?? null;
-        $this->refreshToken = $response['refresh_token'] ?? null;
+        $this->auth->refreshAccessToken($this->refreshToken);
     }
 
     /**
@@ -123,6 +117,30 @@ class AccessToken
     public function setRefreshToken(string $refreshToken)
     {
         $this->refreshToken = $refreshToken;
+
+        return $this;
+    }
+
+    /**
+     * Get authentication
+     *
+     * @return  Authentication
+     */ 
+    public function getAuth()
+    {
+        return $this->auth;
+    }
+
+    /**
+     * Set authentication
+     *
+     * @param  Authentication  $auth  Authentication
+     *
+     * @return  self
+     */ 
+    public function setAuth(Authentication $auth)
+    {
+        $this->auth = $auth;
 
         return $this;
     }

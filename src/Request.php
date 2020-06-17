@@ -11,8 +11,12 @@ use RDStation\Exception\UnauthorizedRequest;
 
 class Request
 {
-    public static function send($method, $url, array $data = array(), array $headers = array(), $verifySsl = true) {
+    const API_ENDPOINT = 'https://api.rd.services';
+
+    public static function send($method, $endpoint, array $data = array(), array $headers = array(), $verifySsl = true) {
         $ch = curl_init();
+
+        $url = self::API_ENDPOINT . $endpoint;
 
         if (strtoupper($method) == 'GET') {
             $url = sprintf('%s?%s', $url, http_build_query($data));
