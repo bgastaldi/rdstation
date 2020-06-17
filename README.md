@@ -13,7 +13,7 @@ composer require glauberportella/rdstation
 ```php
 <?php
 
-use RDStation\AccessToken;
+use RDStation\Authentication;
 use RDStation\Event;
 
 $clientId = 'Your RDStation app client id';
