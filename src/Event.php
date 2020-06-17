@@ -110,6 +110,7 @@ class Event
      * PAYLOAD FIELD NAMES             TYPE    REQ.
      * --------------------------------------------------------------------------------
      * funnel_name                     String  true     Name of the funnel to which the Contact should be marked as lost.
+     * email                           String  true     Lead email
      * reason                          String  false    Reason for why the Contact was marked as lost.
      *
      * @param array $payload
