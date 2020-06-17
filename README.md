@@ -14,7 +14,7 @@ For the current version only Event conversions can be done.
 
 See RD Station docs for fields to pass on each event method.
 
-(https://developers.rdstation.com/pt-BR/reference/events)[https://developers.rdstation.com/pt-BR/reference/events]
+[https://developers.rdstation.com/pt-BR/reference/events](https://developers.rdstation.com/pt-BR/reference/events)
 
 ```php
 <?php
