@@ -38,6 +38,14 @@ class Request
 
         $response = curl_exec($ch);
 
+        $err = curl_errno($ch);
+        if (0 !== $err) {
+            curl_close($ch);
+            throw new \Exception('CURL exception: ' . curl_error($ch));
+        }
+
+        $response = json_decode($response, true);
+ 
         $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($status >= 400) {
             // exception
@@ -61,19 +69,15 @@ class Request
                     $exception = new Exception();
             }
 
-            curl_close($ch);
-            
-            throw $exception;
-        }
+            $exception->set($response['errors']);
 
-        $err = curl_errno($ch);
-        if (0 !== $err) {
             curl_close($ch);
-            throw new \Exception('CURL exception: ' . curl_error($ch));
+
+            throw $exception;
         }
 
         curl_close($ch);
 
-        return json_decode($response, true);
+        return $response;
     }
 }

@@ -34,12 +34,6 @@ class AccessToken
         $this->refreshToken = $refreshToken;
     }
 
-    public function hasExpired()
-    {
-        // @todo test if token is expired
-        return true;
-    }
-
     public function refresh(string $clientId, string $clientSecret)
     {
         $fields = [

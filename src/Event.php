@@ -2,6 +2,7 @@
 
 namespace RDStation;
 
+use RDStation\Exception\Exception;
 use RDStation\Exception\UnauthorizedRequest;
 
 /**
@@ -311,12 +312,14 @@ class Event
             ]);
         } catch (UnauthorizedRequest $e) {
             // invalid access token? refresh and try again
-            if ($e->hasErrorType('UNAUTHORIZED')) {
+            if ($e->hasErrorType(Exception::TYPE_UNAUTHORIZED)) {
                 $accessToken->refresh($this->clientId, $this->clientSecret);
                 $response = Request::send('POST', self::API_ENDPOINT . '/platform/events', $fields, [
                     'Content-Type: application/json',
                     'Authorization: Bearer ' . $accessToken->getToken()
                 ]);
+            } else {
+                throw $e;
             }
         }
 
